@@ -1,53 +1,28 @@
 #!/usr/bin/python3
-"""
-    Fabric script to automate deployment of web_static directory
-"""
-from fabric.api import run, put, local, env
-from datetime import datetime
-import os.path
+""" Pack web static """
+from fabric.api import *
+from os import path
 
-
-env.hosts = ['3.91.150.95', '50.17.75.16']
-
-
-def do_pack():
-    """
-     generates a .tgz archive from the contents of the web_static folder of
-     your AirBnB Clone repo, using the function do_pack.
-    """
-    date = datetime.now().strftime("%Y%m%d%H%M%S")
-    path = 'versions/web_static_' + date + '.tgz'
-    if not (os.path.exists("versions")):
-        local('mkdir -p versions')
-    local('tar -cvzf ' + path + ' web_static')
-    if (os.path.exists(path)):
-        return path
-    return None
+env.hosts = ["3.91.150.95", "50.17.75.16"]
 
 
 def do_deploy(archive_path):
-    """
-    - Upload the archive to the /tmp/ directory of the web server
-    - iUncompress the archive to the folder /data/web_static/releases/<archive
-    filename without extension> on the web server
-    - Delete the archive from the web server
-    - Delete the symbolic link /data/web_static/current from the web server
-    - Create a new the symbolic link /data/web_static/current on the web
-    server, linked to the new version of your code
-    (/data/web_static/releases/<archive filename without extension>)
-    """
-    if not (os.path.exists(archive_path)):
-            return False
-    archive_name = archive_path.split('/')[1]
-    archive_name_without_ext = archive_path.split('/')[1].split('.')[0]
-    release_path = '/data/web_static/releases/' + archive_name_without_ext
-    upload_path = '/tmp/' + archive_name
-    put(archive_path, upload_path)
-    run('mkdir -p ' + release_path)
-    run('tar -xzf ' + upload_path + ' -C ' + release_path)
-    run('rm ' + upload_path)
-    run('mv ' + release_path + '/web_static/* ' + release_path + '/')
-    run('rm -rf ' + release_path + '/web_static')
-    run('rm -rf /data/web_static/current')
-    run('ln -s ' + release_path + ' /data/web_static/current')
-    return True
+    """distributes an archive to your web servers"""
+    if not path.exists(archive_path):
+        return False
+    try:
+        dire = "data/web_static/releases"
+        file_name = archive_path.split('/')[-1]
+        wext = file_name.split('.')[0]
+        put(archive_path, "/tmp/{}".format(file_name))
+        run("mkdir -p mkdir -p /{}/{}".format(dire, wext))
+        run("tar -xzf /tmp/{} -C /{}/{}/".format(file_name, dire, wext))
+        run("rm /tmp/{}".format(file_name))
+        run("mv /{}/{}/web_static/* /{}/{}/".format(dire, wext, dire, wext))
+        run("rm -rf /{}/{}/web_static".format(dire, wext))
+        run("rm -rf /data/web_static/current")
+        run("ln -s /{}/{}/ /data/web_static/current".format(dire, wext))
+        return True
+
+    except Exception:
+        return False
