@@ -1,5 +1,3 @@
-
-
 #!/usr/bin/python3
 """ This is the 3rd Flask setup script. """
 
